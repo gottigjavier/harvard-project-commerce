@@ -1,0 +1,9 @@
+body {
+    padding: 10px;
+}
+
+#auction-box{
+    width: 25rem;
+    display: flex !important;
+    flex-wrap: wrap !important;
+}

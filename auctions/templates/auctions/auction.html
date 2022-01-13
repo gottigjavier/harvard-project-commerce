@@ -1,0 +1,166 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<div class="row" >
+    <div class="col" >
+        {% if user.is_authenticated %}
+            {% if follow %}
+            <form class="float-right" action="{% url 'followremove' %}" onsubmit="followr.disabled = true; return true;">
+                <input type="hidden" name="followrem" value="{{auction.id}}">
+                <input class="btn btn-outline-secondary" type="submit" name="followr" value="Remove to Watchlist">
+            </form>
+            {% else %}
+            <form class="float-right" action="{% url 'followadd' %}" onsubmit="follow.disabled = true; return true;">
+                <input type="hidden" name="followes" value="{{auction.id}}">
+                <input class="btn btn-outline-info" type="submit" name="follow" value="Add to Watchlist">
+            </form>
+            {% endif %}
+        {% endif %}
+        <div  class="ml-3">
+            <h2>Listing: <span class="font-weight-bold" >{{ auction.name }} </span></h2>
+            <p><small>Created: {{auction.created}} (UTC)</small></p>
+        </div>
+    </div>
+    <div class="col" >        
+    </div>
+</div>
+<div class="row">
+    <div class="col rounded border m-1">
+        {% if auction.image != 'null' %}
+            <img src="/auctions/media/{{ auction.image }}" alt="Image" width="400" height="400">
+        {% else %}
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg" alt="Image" width="400" height="400">
+        {% endif %}
+    </div>
+    <div class="col">
+        {% if auction.is_open %}
+            <h3 class="p-2 mb-2 bg-success text-white rounded text-center" >Active</h3>
+            {% if auction.offerer == request.user %}
+                <form action="{% url 'close' %}" onsubmit="closen.disabled = true; return true;">
+                    <input type="hidden" name="close" value="{{auction.id}}">
+                    <input class="btn btn-secondary float-right" type="submit" name="closen" value="Close Auction">
+                    </form>
+            {% endif %}
+        {% else %}
+            <h3 class="p-2 mb-2 bg-secondary text-white rounded text-center" >Closed</h3>
+        {% endif %}
+            
+        {% if auction.offerer == request.user %}
+            <p> Listed by: <b> yourself </b> </p>
+        {% else %}
+            <p> Listed by: <b> {{auction.offerer}} </b> </p>
+        {% endif %}   
+        <p class="font-italic" > "{{auction.description}}" </p>
+        <p> Category: <b> {{auction.category}} </b> </p>
+        <p class="btn btn-outline-secondary" > Starting Bid: $ {{auction.init_bid}} </p>
+        <p></p>
+                
+        {% if auction.init_bid <= bid %}
+            {% if auction.is_open %}
+                <h5 class="btn btn-outline-success" >Actual Bid: $ {{ bid }}  </h5>
+            {% else %}
+                <h5 class="btn btn-outline-danger" >Final Bid: $ {{ bid }}  </h5> <br>
+                {% if auction.offerer == request.user and auction.delivered %}
+                    <h5 class="btn btn-outline-secondary" >The transaction was completed. 
+                    <br> You can delete this listing</h5>
+                    <form action="{% url 'deleted' %}" onsubmit="ldel.disabled = true; return true;">
+                        <input type="hidden" name="del" value="{{auction.id}}">
+                        <input class="btn btn-danger" type="submit" name="ldel" value="Delete">
+                    </form>
+                {% endif %}
+            {% endif %}
+        {% else %}
+            {% if auction.is_open %}
+                <h5 class="btn btn-outline-success" >No bids yet</h5>
+            {% else %}
+                <h5 class="btn btn-outline-info" >There were no bids</h5> <br>
+                {% if auction.offerer == request.user %}
+                    <h5 class="btn btn-outline-secondary" >Do you want to delete this listing?</h5>
+                    <form action="{% url 'deleted' %}" onsubmit="ldel.disabled = true; return true;">
+                        <input type="hidden" name="del" value="{{auction.id}}">
+                        <input class="btn btn-danger" type="submit" name="ldel" value="Delete">
+                    </form>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+                
+        {% if user.is_authenticated %}
+            {% if not auction.is_open %}
+                {% if who_bid == request.user %}
+                    {% if auction.delivered %}
+                        <h5 class="alert alert-success" >Your bid was the winner. <br> 
+                            You have indicated that you completed the transaction. <br>
+                            This listing can be deleted by the person who created it.</h5>
+                    {% else %}
+                        <h5 class="alert alert-success" >Your bid is the winner.</h5>
+                        <h5 class="alert alert-success" >If you have already completed the transaction, 
+                        <form action="{% url 'delivered' %}" onsubmit="ldelivered.disabled = true; return true;">
+                            <input type="hidden" name="delivered" value="{{auction.id}}">
+                            <input class="btn btn-outline-secondary" type="submit" name="ldelivered" value="click here">
+                        </form>
+                        so that the listing can be deleted.</h5>
+                    {% endif %}
+                {% else %}
+                    {% if auction.offerer == request.user %}
+                        {% if not auction.delivered %}
+                            {% if auction.init_bid <= bid %}
+                                <h5 class="alert alert-info text-center" > 
+                                    <strong> {{who_bid}} </strong>won the auction. <br>
+                                    The winner must report that the transaction <br> 
+                                    has been completed for you to close this auction.</h5>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        {% if auction.init_bid <= bid %}
+                            <h5 class="alert alert-info text-center" >Someone else won this auction.</h5>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}        
+            {% else %}
+                {% if who_bid == request.user %}
+                    <p class="font-weight-bold alert alert-primary text-center" >Your bid is the current bid.</p>
+                {% else %}
+                    <span>
+                    <form action="{% url 'auction' auction.id %}" method="POST" onsubmit="placebid.disabled = true; return true;">
+                        {% csrf_token %}
+                        <input type="text" name="nbid">
+                        <input class="btn btn-primary" type="submit" name="placebid" value="Place Bid">
+                        {% if message %}
+                            <span class="bg-danger text-white p-1 rounded"> {{message}} </span>
+                        {% endif %}
+                    </form>
+                    </span>
+                {% endif %}
+            {% endif %}
+            <br>
+            {% if user.is_authenticated and auction.is_open %}
+                <h5 class="text-info pl-2" >Join to comments</h5>
+                <form action="{% url 'newcomment' %}" method="POST" onsubmit="sendcomment.disabled = true; return true;">
+                    {% csrf_token %}
+                    <input type="hidden" name="new" value="{{auction.id}}">
+                    <textarea class="border border-secondary col-12" name="newcommen" rows="3" placeholder="Your comment"></textarea>
+                    <div>
+                        <input class="btn btn-success float-left" type="submit" name="sendcomment" value="Send">
+                    </div>
+                </form>
+            {% endif %}
+        {% else %}
+                <br><br>
+                <p class="btn btn-outline-primary">
+                <a class="btn btn-outline-primary" href="{% url 'login' %}">Log in</a> to bid or follow this auction</p>
+        {% endif %}
+    </div>
+</div>
+    
+<div class="list-group" >
+    <h4 class="mt-2 p-2 pl-4 bg-info text-light rounded" >Comments</h4>
+    {% if not comments %}
+        <p class="text-muted font-italic ml-2" >No comments.</p>
+    {% else %}
+        {% for comment in comments reversed %}
+            <p>By: <b> {{comment.who_comment}} </b><small> --  Date: {{comment.created}}</small> </p>
+            <p class="list-group-item text-muted"><em>{{comment.comment}} </em></p>
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

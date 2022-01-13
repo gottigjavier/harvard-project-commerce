@@ -1,0 +1,81 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    
+    <a class="text-decoration-none" href="{% url 'allcategories' %}">
+        <div class="btn btn-secondary p-1 mb-2" >
+        <h3 >Active Categories </h3>
+        </div>
+    </a>
+    <ul class="nav" >
+            <li class="nav-item">
+                {% for category in categories %}
+                    <a href="{% url 'categories' category %}" class="btn btn-outline-secondary p-0">
+                        {{category}}
+                    </a>
+                {% endfor %}
+            </li>
+    </ul>
+    <h3 class="text-center m-2 p-2 bg-primary text-white rounded" >{{message}}</h3>
+    {% if not auctions %}
+        <h4 class="alert alert-danger m-5 text-center" >{{message1}}</h4>
+        {% if user.is_authenticated %}
+            <h4 class="alert alert-primary m-5 text-center" > <span> Try 
+                <a class="nav-link d-inline" href="{% url 'closedauctions' %}">
+                    Closed Auctions
+                </a></span>
+            </h4>
+        {% else %}
+            <h4 class="alert alert-primary m-5 text-center" >
+                <a class="nav-link d-inline" href="{% url 'login' %}">
+                    Log in
+                </a>to access the closed auctions</h4>
+        {% endif %}    
+    {% else %}
+    <div class="row">
+        {% for auction in auctions reversed %}
+            <br>
+            <a class="text-decoration-none" href="{% url 'auction' auction.id %}">
+            <div class="col-3 rounded border m-1" id="auction-box">
+                <h5 class="text-decoration-none text-muted" > {{ auction.name }} </h5>
+                {% if auction.is_open %}
+                    <h5 class="p-2 mb-2 bg-success text-white rounded text-center" >Active</h5>
+                {% else %}
+                    <h5 class="p-2 mb-2 bg-secondary text-white rounded text-center" >Closed</h5>
+                {% endif %}
+                {% if auction.image != 'null' %}
+                    <img src="/auctions/media/{{ auction.image }}" alt="Image" width="200" height="200">
+                {% else %}
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg" alt="Image" width="200" height="200">
+                {% endif %}
+                <div class="mt-3 text-muted">
+                    <p class="font-italic" > "{{auction.description}}" </p>
+                
+                    <p class="font-weight-normal"> (Starting Bid: $ {{auction.init_bid}}) </p>
+                    {% for key, value in auctions_bids.items %}
+                        {% if key == auction.id %}
+                            {% if auction.is_open %}
+                                <h5 class="font-weight-bold alert alert-success"> <b> Actual Bid: $ {{ value.bid }} </b> </h5>
+                                {% if user == value.who_bid %}
+                                    <h5 class="font-weight-bold alert alert-primary">
+                                        Your bid is the current bid
+                                    </h5>
+                                {% endif %}
+                            {% else %}
+                                <h5 class="font-weight-bold alert alert-danger"> <b> Final Bid: $ {{ value.bid }} </b> </h5>
+                                {% if user == value.who_bid %}
+                                    <h5 class="font-weight-bold alert alert-info">
+                                        You won this auction
+                                    </h5>
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <br><br></a>
+            </div>
+            
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endblock %}

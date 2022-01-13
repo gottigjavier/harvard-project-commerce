@@ -1,0 +1,18 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    {% if categories %}
+    <h2 class="text-center m-2 p-2 bg-primary text-white rounded" >Active Categories </h2>
+    <ul class="nav" >
+        {% for category in categories %}
+            <li class="nav-item"></li>
+                <a href="{% url 'categories' category %}" class=" btn btn-outline-secondary p-1 m-1 ">    
+                    <h4> {{category}} </h4>
+                </a>
+            </li>
+        {% endfor %}            
+    </ul>
+    {% else %}
+        <h3 class="alert alert-danger text-center">No Active Categories</h3>
+    {% endif %}
+{% endblock %}
